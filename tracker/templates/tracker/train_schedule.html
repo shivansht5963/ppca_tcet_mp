@@ -1,0 +1,96 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Train {{ train_number }} Schedule — RailTrack India{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px;">
+
+  <!-- Breadcrumb -->
+  <div class="page-header">
+    <div class="page-breadcrumb">
+      <a href="{% url 'dashboard' %}" style="color:var(--text-muted);">Home</a>
+      <span style="margin:0 0.5rem;">/</span>
+      <a href="{% url 'dashboard' %}#tab-schedule" style="color:var(--text-muted);">Train Schedule</a>
+      {% if train_number %}
+        <span style="margin:0 0.5rem;">/</span>
+        <span style="color:var(--text-primary); font-weight:600;">{{ train_number }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div style="margin-bottom: 2rem;">
+    <h1 class="dashboard-title" style="font-size:2rem; margin:0;">Train Schedule</h1>
+    <p style="color:var(--text-secondary); margin-top:0.25rem;">
+      {% if train_number %}Train Number: <strong style="color:var(--text-primary);">{{ train_number }}</strong>{% endif %}
+    </p>
+  </div>
+
+  <!-- Offline mode notice -->
+  {% if data_source == 'MOCK_DATA' %}
+    <div style="background:var(--offline-bg); color:var(--offline-fg); border:1px solid var(--offline-border); padding:1rem; border-radius:var(--r-md); margin-bottom:2rem; display:flex; gap:1rem; align-items:center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <div>
+        <strong>Offline Mode:</strong> Live API is unavailable right now. Results are based on scheduled / mock data.
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Result card -->
+  <div class="serene-card" style="padding: 2rem;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">
+      <h3 style="font-size:1.125rem; margin:0;">Route Map</h3>
+      {% if stops %}
+        <span style="font-size:0.875rem; color:var(--text-muted); font-weight:500; background:var(--bg-page); padding:0.25rem 0.75rem; border-radius:100px;">
+          {{ stops|length }} Stop{{ stops|length|pluralize }}
+        </span>
+      {% endif %}
+    </div>
+
+    {% if stops %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%; text-align:left; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">#</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Station</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Code</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Arr/Dep</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Day</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; text-align:right;">Dist (km)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for stop in stops %}
+            <tr style="border-bottom:1px solid var(--border); {% if forloop.first or forloop.last %}background:var(--bg-page);{% endif %}">
+              <td style="padding:1rem 0.75rem; color:var(--text-muted);">{{ forloop.counter }}</td>
+              <td style="padding:1rem 0.75rem; font-weight:600;">{{ stop.station_name }}</td>
+              <td style="padding:1rem 0.75rem; color:var(--brand); font-weight:500;">{{ stop.station_code }}</td>
+              <td style="padding:1rem 0.75rem;">
+                <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                  <span style="font-size:0.875rem; color:var(--text-secondary);">Arr: {{ stop.arrival }}</span>
+                  <span style="font-size:0.875rem; color:var(--text-secondary);">Dep: {{ stop.departure }}</span>
+                </div>
+              </td>
+              <td style="padding:1rem 0.75rem;">Day {{ stop.day }}</td>
+              <td style="padding:1rem 0.75rem; text-align:right; color:var(--text-secondary);">{{ stop.distance_km }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:3rem 0; color:var(--text-muted);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:1rem; opacity:0.5;"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <p>No schedule found for train <strong>{{ train_number }}</strong>.</p>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div style="margin-top:2rem; text-align:center;">
+    <a href="{% url 'dashboard' %}#tab-schedule" class="btn" style="background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary);">&larr; Check Another Schedule</a>
+  </div>
+
+</div>
+{% endblock %}

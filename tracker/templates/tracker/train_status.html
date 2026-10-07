@@ -1,0 +1,111 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Train {{ result.train_number }} Status — RailTrack India{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px;">
+
+  <!-- Breadcrumb -->
+  <div class="page-header">
+    <div class="page-breadcrumb">
+      <a href="{% url 'dashboard' %}" style="color:var(--text-muted);">Home</a>
+      <span style="margin:0 0.5rem;">/</span>
+      <a href="{% url 'dashboard' %}#tab-status" style="color:var(--text-muted);">Train Status</a>
+      {% if result.train_number %}
+        <span style="margin:0 0.5rem;">/</span>
+        <span style="color:var(--text-primary); font-weight:600;">{{ result.train_number }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div style="margin-bottom: 2rem;">
+    <h1 class="dashboard-title" style="font-size:2rem; margin:0;">Train Running Status</h1>
+    <p style="color:var(--text-secondary); margin-top:0.25rem;">
+      {% if result.train_number %}
+        <strong style="color:var(--text-primary);">{{ result.train_number }}</strong>
+        {% if result.train_name %}&mdash; <strong style="color:var(--text-primary);">{{ result.train_name }}</strong>{% endif %}
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Offline mode notice -->
+  {% if data_source == 'MOCK_DATA' %}
+    <div style="background:var(--offline-bg); color:var(--offline-fg); border:1px solid var(--offline-border); padding:1rem; border-radius:var(--r-md); margin-bottom:2rem; display:flex; gap:1rem; align-items:center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <div>
+        <strong>Offline Mode:</strong> Live API is unavailable right now. Results are based on scheduled / mock data.
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Result card -->
+  <div class="serene-card" style="padding: 2rem;">
+
+    {% if result.error %}
+      <div style="color:var(--err-fg); background:var(--err-bg); padding:1rem; border-radius:var(--r-sm);">
+        Could not retrieve train status.
+        {% if result.error_message %}<br>{{ result.error_message }}{% endif %}
+      </div>
+    {% else %}
+
+      <!-- Status strip -->
+      {% if result.delay_minutes > 0 %}
+      <div style="background:#FFF3CD; color:#856404; padding:1.5rem; border-radius:var(--r-md); margin-bottom:2rem; border-left:4px solid #FFEBA8; display:flex; justify-content:space-between; align-items:center;">
+      {% else %}
+      <div style="background:var(--cnf-bg); color:var(--cnf-fg); padding:1.5rem; border-radius:var(--r-md); margin-bottom:2rem; border-left:4px solid var(--cnf-border); display:flex; justify-content:space-between; align-items:center;">
+      {% endif %}
+        <div>
+          <div style="font-size:1.25rem; font-weight:700;">{{ result.status_label }}</div>
+          {% if result.delay_minutes > 0 %}
+            <div style="font-weight:600; margin-top:0.25rem; display:flex; align-items:center; gap:0.25rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Delayed by {{ result.delay_minutes }} min
+            </div>
+          {% else %}
+            <div style="font-weight:600; margin-top:0.25rem; display:flex; align-items:center; gap:0.25rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Running on Time
+            </div>
+          {% endif %}
+        </div>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.2;"><path d="M4 22h16"></path><path d="M4 14V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"></path><rect x="6" y="8" width="12" height="4"></rect><path d="M12 14v4"></path></svg>
+      </div>
+
+      <!-- Info grid -->
+      <h3 style="font-size:1.125rem; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">Train Details</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1.5rem; margin-bottom:2rem;">
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Train Number</div>
+          <div style="font-weight:500;">{{ result.train_number }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Train Name</div>
+          <div style="font-weight:500;">{{ result.train_name }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Source Station</div>
+          <div style="font-weight:500;">{{ result.source_station }}{% if result.source_name %}<br><span style="font-size:0.875rem; color:var(--text-secondary);">{{ result.source_name }}</span>{% endif %}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Destination</div>
+          <div style="font-weight:500;">{{ result.destination_station }}{% if result.destination_name %}<br><span style="font-size:0.875rem; color:var(--text-secondary);">{{ result.destination_name }}</span>{% endif %}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Current Location</div>
+          <div style="font-weight:500;">{{ result.current_station }}{% if result.current_station_name %}<br><span style="font-size:0.875rem; color:var(--text-secondary);">{{ result.current_station_name }}</span>{% endif %}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Update Time</div>
+          <div style="font-weight:500;">{{ result.last_updated }}</div>
+        </div>
+      </div>
+
+    {% endif %}
+  </div>
+
+  <div style="margin-top:2rem; text-align:center;">
+    <a href="{% url 'dashboard' %}#tab-status" class="btn" style="background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary);">&larr; Track Another Train</a>
+  </div>
+
+</div>
+{% endblock %}

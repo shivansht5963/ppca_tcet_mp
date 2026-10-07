@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <!-- Anti-FOUC: apply stored theme before any paint -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('railtrack-theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{{ page_title|default:"RailTrack India" }}{% endblock %}</title>
+  <meta name="description" content="Resilient Indian Railways information aggregator — PNR status, live train tracking, schedules and more. Powered by Indian Railways API with smart fallback.">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Pico.css (base reset / normalize) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'tracker/custom.css' %}?v=3" />
+</head>
+<body>
+
+  <!-- ── Train Animation Overlay ──────────────────────────────── -->
+  <div id="train-overlay" class="train-overlay" aria-live="polite" aria-label="Searching" aria-hidden="true">
+    <div class="train-overlay-bg"></div>
+    <div class="train-overlay-content">
+      <div class="serene-loader-card">
+        <div class="loader-circle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2" ry="2"></rect><path d="M4 11h16"></path><path d="M12 3v8"></path><path d="M8 19l-2 3"></path><path d="M16 19l2 3"></path><path d="M8 15h0"></path><path d="M16 15h0"></path></svg>
+        </div>
+        <h3>Loading Train Details...</h3>
+        <p>Please wait a moment while we retrieve live updates.</p>
+        <div class="loader-progress-bar">
+          <div class="loader-progress-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Navigation ───────────────────────────────────────────── -->
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner container">
+
+      <!-- Brand -->
+      <a href="{% url 'dashboard' %}" class="nav-brand" aria-label="RailTrack India — Home">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+        <span class="brand-text">RailTrack</span>
+      </a>
+
+      <!-- Nav links -->
+      <div class="nav-links" role="list">
+        <a href="{% url 'dashboard' %}#tab-between" class="nav-link" id="nav-home"     onclick="document.getElementById('tab-between').checked = true;">Find Trains</a>
+        <a href="{% url 'dashboard' %}#tab-pnr"     class="nav-link" id="nav-pnr"      onclick="document.getElementById('tab-pnr').checked = true;">PNR Status</a>
+        <a href="{% url 'dashboard' %}#tab-status" class="nav-link" id="nav-status"   onclick="document.getElementById('tab-status').checked = true;">Live Train</a>
+        <a href="{% url 'dashboard' %}#tab-schedule"class="nav-link" id="nav-schedule" onclick="document.getElementById('tab-schedule').checked = true;">Schedule</a>
+      </div>
+
+      <!-- Actions -->
+      <div class="nav-actions">
+        <a href="#" class="action-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          Help
+        </a>
+
+        <!-- Dark mode toggle switch -->
+        <label class="theme-switch" for="theme-toggle" title="Toggle dark mode" style="margin: 0; display: flex; align-items: center;">
+          <input type="checkbox" id="theme-toggle" aria-label="Toggle dark mode" />
+          <div class="slider">
+            <span class="mode-text light-text">DAY</span>
+            <span class="mode-text dark-text">NIGHT</span>
+            <div class="thumb">
+              <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </div>
+          </div>
+        </label>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ── Main Content ──────────────────────────────────────────── -->
+  <main class="site-main" id="main-content">
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="container alert-msg" role="alert">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+  </main>
+
+  <!-- ── Footer ────────────────────────────────────────────────── -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner container">
+      <div class="footer-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+        </svg>
+        <span>RailTrack India</span>
+        <span style="color: var(--text-muted); font-weight: 400; font-size: 0.85rem; margin-left: 0.5rem;">© 2025 Indian Rail Transit Intelligence. Serene Travel.</span>
+      </div>
+      <div class="footer-links">
+        <a href="#">Station Directory</a>
+        <a href="#">Fare Rules</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Customer Assistance</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ───────────────────────────────────────────────── -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Dark Mode ──────────────────────────────────────────── */
+    var html = document.documentElement;
+
+    function applyTheme(theme) {
+      html.setAttribute('data-theme', theme);
+      localStorage.setItem('railtrack-theme', theme);
+    }
+
+    var toggleSwitch = document.getElementById('theme-toggle');
+    if (toggleSwitch) {
+      // Set initial checkbox state
+      if (html.getAttribute('data-theme') === 'dark') {
+        toggleSwitch.checked = true;
+      }
+      toggleSwitch.addEventListener('change', function () {
+        applyTheme(this.checked ? 'dark' : 'light');
+      });
+    }
+
+    /* ── Hash → Tab Activation ──────────────────────────────── */
+    var validTabs = ['tab-pnr', 'tab-status', 'tab-between', 'tab-schedule'];
+
+    function activateTabFromHash() {
+      var hash = window.location.hash;
+      if (!hash) return;
+      var tabId = hash.replace('#', '');
+      if (validTabs.indexOf(tabId) === -1) return;
+      var tabInput = document.getElementById(tabId);
+      if (tabInput) {
+        tabInput.checked = true;
+        // Scroll to the card
+        var card = document.getElementById('search-card');
+        if (card) {
+          setTimeout(function () {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
+      }
+    }
+
+    activateTabFromHash();
+    window.addEventListener('hashchange', activateTabFromHash);
+
+    /* ── Train Animation on Form Submit ─────────────────────── */
+    var overlay  = document.getElementById('train-overlay');
+    var trainEl  = document.getElementById('train-el');
+    var animating = false;
+
+    function showTrainAndSubmit(form) {
+      if (!overlay || animating) {
+        form.submit();
+        return;
+      }
+      animating = true;
+
+      // Show the loader immediately
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.add('is-active');
+      overlay.classList.add('active');
+
+      // Submit the form immediately. The loader will stay visible 
+      // until the browser receives the new page from the server.
+      form.submit();
+    }
+
+    document.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        showTrainAndSubmit(form);
+      });
+    });
+
+    /* ── Active Nav Link ────────────────────────────────────── */
+    var path = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+      var href = link.getAttribute('href').split('#')[0];
+      if (path === href || (path === '/' && href === '/')) {
+        link.classList.add('active');
+      }
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+{% extends 'tracker/base.html' %}
+{% block title %}RailTrack India — Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero Section ──────────────────────────────────────────── -->
+<section class="dashboard-hero">
+  <div class="container">
+    <div style="display:inline-flex; align-items:center; gap:0.5rem; background:#F1F5F9; padding:0.25rem 0.75rem; border-radius:100px; font-size:0.75rem; color:#606460; margin-bottom:1rem; border: 1px solid var(--border);">
+      <div style="width:6px; height:6px; background:var(--text-muted); border-radius:50%;"></div>
+      Serene Indian Transit Wayfinding
+    </div>
+
+    <h1 class="dashboard-title">Your Journey, Made Simple.</h1>
+    <p class="dashboard-subtitle">Fast, accurate PNR updates and live train status across Indian Railways.</p>
+
+    {% if error %}
+    <div class="alert-msg" style="margin-bottom: 2rem; border-left-color: var(--err-fg); color: var(--err-fg); background: var(--err-bg);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem; vertical-align: text-bottom;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Search Pill Container -->
+    <div class="search-pill-container" id="search-card">
+      
+      <!-- CSS-only Tabs logic using radio buttons -->
+      <input type="radio" name="search-tab" id="tab-pnr" class="tab-input" checked style="display:none;">
+      <input type="radio" name="search-tab" id="tab-status" class="tab-input" style="display:none;">
+      <input type="radio" name="search-tab" id="tab-between" class="tab-input" style="display:none;">
+      <input type="radio" name="search-tab" id="tab-schedule" class="tab-input" style="display:none;">
+
+      <div class="search-pill-tabs">
+        <label for="tab-pnr" class="search-pill-tab" id="label-pnr">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          PNR Status
+        </label>
+        <label for="tab-status" class="search-pill-tab" id="label-status">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Live Train
+        </label>
+        <label for="tab-between" class="search-pill-tab" id="label-between">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          Find Trains
+        </label>
+        <label for="tab-schedule" class="search-pill-tab" id="label-schedule">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Schedule
+        </label>
+      </div>
+
+      <style>
+        /* CSS to toggle panels inside the pill */
+        .tab-panel { display: none; }
+        #tab-pnr:checked ~ .search-pill-content #panel-pnr { display: block; }
+        #tab-status:checked ~ .search-pill-content #panel-status { display: block; }
+        #tab-between:checked ~ .search-pill-content #panel-between { display: block; }
+        #tab-schedule:checked ~ .search-pill-content #panel-schedule { display: block; }
+        
+        #tab-pnr:checked ~ .search-pill-tabs #label-pnr,
+        #tab-status:checked ~ .search-pill-tabs #label-status,
+        #tab-between:checked ~ .search-pill-tabs #label-between,
+        #tab-schedule:checked ~ .search-pill-tabs #label-schedule {
+          background: var(--bg-input);
+          color: var(--text-primary);
+        }
+      </style>
+
+      <div class="search-pill-content">
+        <!-- PNR Panel -->
+        <div class="tab-panel" id="panel-pnr">
+          <form method="POST" action="{% url 'pnr_status' %}" class="search-pill-input-row">
+            {% csrf_token %}
+            <div class="input-wrapper">
+              <svg width="16" height="16" stroke="currentColor" fill="none" viewBox="0 0 24 24" style="color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <input type="text" name="pnr" placeholder="Enter 10-digit PNR number" maxlength="10" required autocomplete="off" inputmode="numeric">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin:0; width:100%;">
+              Check Status &rarr;
+            </button>
+          </form>
+          <div class="search-pill-footer">
+            <div style="display:flex; gap:0.25rem; align-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              Instant confirmation from official CRIS gateway
+            </div>
+            <div>0 / 10 DIGITS</div>
+          </div>
+        </div>
+        
+        <!-- Train Status Panel -->
+        <div class="tab-panel" id="panel-status">
+          <form method="POST" action="{% url 'train_status' %}" class="search-pill-input-row">
+            {% csrf_token %}
+            <div class="input-wrapper">
+              <svg width="16" height="16" stroke="currentColor" fill="none" viewBox="0 0 24 24" style="color:var(--text-muted);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <input type="text" name="train_number" placeholder="Enter Train Number (e.g. 12951)" maxlength="5" required autocomplete="off" inputmode="numeric">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin:0; width:100%;">
+              Track Train &rarr;
+            </button>
+          </form>
+          <div class="search-pill-footer">
+            <div style="display:flex; gap:0.25rem; align-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              Live GPS telemetry from NTES
+            </div>
+          </div>
+        </div>
+
+        <!-- Find Trains Panel -->
+        <div class="tab-panel" id="panel-between">
+          <form method="POST" action="{% url 'trains_between' %}" class="search-pill-input-row">
+            {% csrf_token %}
+            <div style="display:flex; gap:1rem; width:100%;">
+              <div class="input-wrapper" style="flex:1;">
+                <input type="text" name="from_station" placeholder="From Station Code (e.g. NDLS)" required>
+              </div>
+              <div class="input-wrapper" style="flex:1;">
+                <input type="text" name="to_station" placeholder="To Station Code (e.g. MMCT)" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin:0; width:100%;">
+              Find Trains &rarr;
+            </button>
+          </form>
+        </div>
+
+        <!-- Schedule Panel -->
+        <div class="tab-panel" id="panel-schedule">
+          <form method="POST" action="{% url 'train_schedule' %}" class="search-pill-input-row">
+            {% csrf_token %}
+            <div class="input-wrapper">
+              <svg width="16" height="16" stroke="currentColor" fill="none" viewBox="0 0 24 24" style="color:var(--text-muted);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <input type="text" name="train_number" placeholder="Enter Train Number (e.g. 12951)" maxlength="5" required autocomplete="off" inputmode="numeric">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin:0; width:100%;">
+              Check Schedule &rarr;
+            </button>
+          </form>
+          <div class="search-pill-footer">
+            <div style="display:flex; gap:0.25rem; align-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              Complete timetable & halts
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recent Checks (Inside the pill, bottom aligned) -->
+      {% if recent_searches %}
+      <div style="margin-top: 2.5rem; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:1rem; font-size:0.75rem; color:var(--text-muted); font-weight:500;">
+        <span style="letter-spacing:0.05em;">RECENT CHECKS:</span>
+        <div class="recent-checks-inline">
+          {% for s in recent_searches %}
+            {% if s.search_type == 'PNR' %}
+              <form method="POST" action="{% url 'pnr_status' %}" style="margin:0; padding:0; display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="pnr" value="{{ s.query }}">
+                <button type="submit" class="recent-check-tag" style="border-radius: var(--r-pill);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path></svg>
+                  PNR {{ s.query }}
+                </button>
+              </form>
+            {% elif s.search_type == 'RUNNING' %}
+              <form method="POST" action="{% url 'train_status' %}" style="margin:0; padding:0; display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="train_number" value="{{ s.query }}">
+                <button type="submit" class="recent-check-tag" style="border-radius: var(--r-pill);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  RUNNING {{ s.query }}
+                </button>
+              </form>
+            {% elif s.search_type == 'BETWEEN' %}
+              <form method="POST" action="{% url 'trains_between' %}" style="margin:0; padding:0; display:inline;">
+                {% csrf_token %}
+                <!-- Split the query (e.g. "NDLS-MMCT") -->
+                <input type="hidden" name="from_station" value="{{ s.query|slice:':4' }}">
+                <input type="hidden" name="to_station" value="{{ s.query|slice:'5:' }}">
+                <button type="submit" class="recent-check-tag" style="border-radius: var(--r-pill);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                  BETWEEN {{ s.query }}
+                </button>
+              </form>
+            {% elif s.search_type == 'SCHEDULE' %}
+              <form method="POST" action="{% url 'train_schedule' %}" style="margin:0; padding:0; display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="train_number" value="{{ s.query }}">
+                <button type="submit" class="recent-check-tag" style="border-radius: var(--r-pill);">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect></svg>
+                  SCHEDULE {{ s.query }}
+                </button>
+              </form>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Essential Tools ───────────────────────────────────────── -->
+<section class="essential-section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <div class="section-pretitle">Streamlined Transit</div>
+        <h2 class="dashboard-title" style="margin:0; font-size:2rem;">Essential Tools</h2>
+      </div>
+      <div style="color:var(--text-secondary); font-size:0.875rem;">Calm utility designed for swift clarity</div>
+    </div>
+
+    <div class="essential-grid">
+      
+      <div class="essential-card">
+        <div class="essential-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+        </div>
+        <h3>Live Train Tracking</h3>
+        <p>Track real-time delay, platform & location.</p>
+        <a href="#" class="essential-link">Open live tracker &rarr;</a>
+      </div>
+
+      <div class="essential-card">
+        <div class="essential-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+        <h3>Seat & Quota Availability</h3>
+        <p>Check general, tatkal, and ladies quota seats.</p>
+        <a href="#" class="essential-link">Explore quotas &rarr;</a>
+      </div>
+
+      <div class="essential-card">
+        <div class="essential-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+        <h3>Station & Schedule</h3>
+        <p>Timetables, platform maps, and route halts.</p>
+        <a href="#" class="essential-link">View station logs &rarr;</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Quiet Journeys Banner ───────────────────────────────────────── -->
+<section style="padding-bottom: 4rem;">
+  <div class="container">
+    <div class="quiet-banner">
+      <!-- We don't have the image, so we use a gradient placeholder matching the serene theme -->
+      <div class="quiet-img" style="background: linear-gradient(135deg, #e2ebd8 0%, #cbdac0 100%);"></div>
+      <div class="quiet-content">
+        <div class="section-pretitle">QUIET JOURNEYS</div>
+        <h3>Experience Indian transit with mindful ease</h3>
+        <p>Real-time alerts delivered without spam or overwhelming alerts.</p>
+      </div>
+      <div class="quiet-stats">
+        <div class="quiet-stat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          99.9% Route Precision
+        </div>
+        <div class="quiet-stat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          Zero Ad Clutter
+        </div>
+      </div>
+    </div>
+    
+    <div style="display:flex; justify-content:center;">
+      <div style="background:var(--bg-input); padding:0.25rem 1rem; border-radius:100px; font-size:0.75rem; color:var(--text-secondary); font-weight:500; display:flex; align-items:center; gap:0.5rem;">
+        <div style="width:6px; height:6px; background:var(--brand); border-radius:50%;"></div>
+        CRIS Railnet Active <span style="color:var(--border);">|</span> All 17 railway zones operational
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends 'tracker/base.html' %}
+{% block title %}PNR {{ result.pnr_number }} — RailTrack India{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px;">
+
+  <!-- Breadcrumb -->
+  <div class="page-header">
+    <div class="page-breadcrumb">
+      <a href="{% url 'dashboard' %}" style="color:var(--text-muted);">Home</a>
+      <span style="margin:0 0.5rem;">/</span>
+      <a href="{% url 'dashboard' %}#tab-pnr" style="color:var(--text-muted);">PNR Status</a>
+      {% if result.pnr_number %}
+        <span style="margin:0 0.5rem;">/</span>
+        <span style="color:var(--text-primary); font-weight:600;">{{ result.pnr_number }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div style="margin-bottom: 2rem;">
+    <h1 class="dashboard-title" style="font-size:2rem; margin:0;">PNR Status</h1>
+    <p style="color:var(--text-secondary); margin-top:0.25rem;">
+      {% if result.pnr_number %}PNR Number: <strong style="color:var(--text-primary);">{{ result.pnr_number }}</strong>{% endif %}
+    </p>
+  </div>
+
+  <!-- Offline mode notice -->
+  {% if data_source == 'MOCK_DATA' %}
+    <div style="background:var(--offline-bg); color:var(--offline-fg); border:1px solid var(--offline-border); padding:1rem; border-radius:var(--r-md); margin-bottom:2rem; display:flex; gap:1rem; align-items:center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <div>
+        <strong>Offline Mode:</strong> Live API is unavailable right now. Results are based on scheduled / mock data.
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Result card -->
+  <div class="serene-card" style="padding: 2rem;">
+    {% if result.error %}
+      <div style="color:var(--err-fg); background:var(--err-bg); padding:1rem; border-radius:var(--r-sm);">
+        Could not retrieve PNR details.
+        {% if result.error_message %}<br>{{ result.error_message }}{% endif %}
+      </div>
+    {% else %}
+
+      <!-- Journey info grid -->
+      <h3 style="font-size:1.125rem; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">Journey Details</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1.5rem; margin-bottom:3rem;">
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Train</div>
+          <div style="font-weight:500;">{{ result.train_number }}<br><span style="color:var(--text-secondary); font-size:0.875rem;">{{ result.train_name }}</span></div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Date</div>
+          <div style="font-weight:500;">{{ result.journey_date }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">From</div>
+          <div style="font-weight:500;">{{ result.from_station }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">To</div>
+          <div style="font-weight:500;">{{ result.to_station }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:600; margin-bottom:0.25rem;">Class</div>
+          <div style="font-weight:500;">{{ result.travel_class }}</div>
+        </div>
+      </div>
+
+      <!-- Passengers table -->
+      <h3 style="font-size:1.125rem; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem;">Passengers</h3>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; text-align:left; border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">#</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Passenger</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Coach</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Berth</th>
+              <th style="padding:0.75rem; color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pax in result.passengers %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:1rem 0.75rem;">{{ forloop.counter }}</td>
+              <td style="padding:1rem 0.75rem; font-weight:500;">Passenger {{ forloop.counter }}</td>
+              <td style="padding:1rem 0.75rem;">{{ pax.coach|default:"-" }}</td>
+              <td style="padding:1rem 0.75rem;">{{ pax.berth|default:"-" }}</td>
+              <td style="padding:1rem 0.75rem;">
+                {% if 'CNF' in pax.booking_status %}
+                  <span class="status-badge status-cnf">{{ pax.booking_status }}</span>
+                {% else %}
+                  <span class="status-badge status-neutral">{{ pax.booking_status }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="padding:1rem; text-align:center; color:var(--text-muted);">No passenger details found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% endif %}
+  </div>
+
+  <div style="margin-top:2rem; text-align:center;">
+    <a href="{% url 'dashboard' %}#tab-pnr" class="btn" style="background:var(--bg-card); border:1px solid var(--border); color:var(--text-primary);">&larr; Back to Search</a>
+  </div>
+
+</div>
+{% endblock %}
